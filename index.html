@@ -81,6 +81,7 @@
     let running = false;
     let lastText = "";
 
+    const liveAppUrl = "https://script.google.com/macros/s/AKfycby3mCSKdB-Gqnu-XpPtlbMZZtgxVQitaTDyCY2ZRt5YhhwS30GtGXKCn1XkkPZHCfM/exec";
     const status = document.getElementById("status");
     const ticket = document.getElementById("ticket");
     const startButton = document.getElementById("start");
@@ -92,6 +93,18 @@
 
 function onScanSuccess(decodedText) {
   lastText = decodedText.trim();
+
+fetch(liveAppUrl, {
+  method: "POST",
+  mode: "no-cors",
+  headers: {
+    "Content-Type": "text/plain;charset=UTF-8"
+  },
+  body: JSON.stringify({
+    action: "checkIn",
+    ticketId: lastText
+  })
+});
 
   ticket.textContent = lastText;
   copyButton.disabled = !lastText;
