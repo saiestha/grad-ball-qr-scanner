@@ -88,18 +88,19 @@
     const copyButton = document.getElementById("copy");
 
     
-async function onScanSuccess(decodedText) {
-  if (!running || busy) return;
+
+function onScanSuccess(decodedText) {
+  if (!running) return;
 
   lastText = decodedText.trim();
   ticket.textContent = lastText;
   copyButton.disabled = !lastText;
 
-  status.textContent =
-    "Ticket scanned. Verification connection still needs to be configured.";
+  status.textContent = "QR code scanned successfully!";
 
-  await stopScanner();
+  stopScanner();
 }
+
 
 
     async function startScanner() {
