@@ -89,17 +89,17 @@
 
     
 
-function onScanSuccess(decodedText) {
-  alert("QR detected: " + decodedText);
 
+function onScanSuccess(decodedText) {
   lastText = decodedText.trim();
+
   ticket.textContent = lastText;
   copyButton.disabled = !lastText;
-
   status.textContent = "QR code scanned successfully!";
 
   stopScanner();
 }
+
 
 
 
