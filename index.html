@@ -82,6 +82,50 @@
     let lastText = "";
 
     const liveAppUrl = "https://script.google.com/macros/s/AKfycby3mCSKdB-Gqnu-XpPtlbMZZtgxVQitaTDyCY2ZRt5YhhwS30GtGXKCn1XkkPZHCfM/exec";
+    
+function lookupTicket(ticketId) {
+  return new Promise((resolve, reject) => {
+    const callbackName = "gradBallLookup";
+    const script = document.createElement("script");
+    let finished = false;
+
+    function cleanup() {
+      clearTimeout(timeout);
+      script.remove();
+      delete window[callbackName];
+    }
+
+    const timeout = setTimeout(() => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      reject(new Error("Ticket lookup timed out."));
+    }, 10000);
+
+    window[callbackName] = (result) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      resolve(result);
+    };
+
+    script.onerror = () => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      reject(new Error("Could not contact the ticket system."));
+    };
+
+    script.src =
+      liveAppUrl +
+      "?callback=" + callbackName +
+      "&ticketId=" + encodeURIComponent(ticketId) +
+      "&t=" + Date.now();
+
+    document.head.appendChild(script);
+  });
+}
+
     const status = document.getElementById("status");
     const ticket = document.getElementById("ticket");
     const startButton = document.getElementById("start");
@@ -91,27 +135,56 @@
     
 
 
-function onScanSuccess(decodedText) {
-  lastText = decodedText.trim();
 
-fetch(liveAppUrl, {
-  method: "POST",
-  mode: "no-cors",
-  headers: {
-    "Content-Type": "text/plain;charset=UTF-8"
-  },
-  body: JSON.stringify({
-    action: "checkIn",
-    ticketId: lastText
-  })
-});
+async function onScanSuccess(decodedText) {
+  lastText = decodedText.trim();
 
   ticket.textContent = lastText;
   copyButton.disabled = !lastText;
-  status.textContent = "QR code scanned successfully!";
+  status.textContent = "Checking ticket...";
 
   stopScanner();
+
+  try {
+    // First, check the current ticket status.
+    const before = await lookupTicket(lastText);
+
+    if (!before.ok) {
+      status.textContent = before.message || "ENTRY REJECTED";
+      return;
+    }
+
+    // Request check-in. The POST response itself is unreadable
+    // in no-cors mode, so verify the change with a fresh lookup.
+    await fetch(liveAppUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8"
+      },
+      body: JSON.stringify({
+        action: "checkIn",
+        ticketId: lastText
+      })
+    });
+
+    const after = await lookupTicket(lastText);
+
+    if (
+      !after.ok &&
+      after.message === "ALREADY CHECKED IN"
+    ) {
+      status.textContent = "ENTRY APPROVED — CHECK-IN RECORDED";
+    } else {
+      status.textContent =
+        "CHECK-IN NOT CONFIRMED — PLEASE CHECK THE SHEET";
+    }
+  } catch (error) {
+    status.textContent =
+      "CONNECTION ERROR — PLEASE CHECK THE SHEET";
+  }
 }
+
 
 
 
