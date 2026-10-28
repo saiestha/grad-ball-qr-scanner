@@ -87,21 +87,20 @@
     const stopButton = document.getElementById("stop");
     const copyButton = document.getElementById("copy");
 
-    function onScanSuccess(decodedText) {
-      if (!running) return;
+    
+async function onScanSuccess(decodedText) {
+  if (!running || busy) return;
 
-      lastText = decodedText.trim();
-      ticket.textContent = lastText;
-      copyButton.disabled = !lastText;
-     status.textContent = "Ticket scanned. Opening the LIVE check-in app…";
-stopScanner();
+  lastText = decodedText.trim();
+  ticket.textContent = lastText;
+  copyButton.disabled = !lastText;
 
-const liveAppUrl = "https://script.google.com/macros/s/AKfycby3mCSKdB-Gqnu-XpPtlbMZZtgxVQitaTDyCY2ZRt5YhhwS30GtGXKCn1XkkPZHCfM/exec";
-const destination = new URL(liveAppUrl);
-destination.searchParams.set("ticketId", lastText);
+  status.textContent =
+    "Ticket scanned. Verification connection still needs to be configured.";
 
-window.location.href = destination.toString();
-    }
+  await stopScanner();
+}
+
 
     async function startScanner() {
       startButton.disabled = true;
