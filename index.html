@@ -93,9 +93,14 @@
       lastText = decodedText.trim();
       ticket.textContent = lastText;
       copyButton.disabled = !lastText;
-      status.textContent =
-        "QR code read successfully. Check the ID, then copy it.";
-      stopScanner();
+     status.textContent = "Ticket scanned. Opening the LIVE check-in app…";
+stopScanner();
+
+const liveAppUrl = "https://script.google.com/macros/s/AKfycby3mCSKdB-Gqnu-XpPtlbMZZtgxVQitaTDyCY2ZRt5YhhwS30GtGXKCn1XkkPZHCfM/exec";
+const destination = new URL(liveAppUrl);
+destination.searchParams.set("ticketId", lastText);
+
+window.location.href = destination.toString();
     }
 
     async function startScanner() {
