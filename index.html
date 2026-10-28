@@ -90,7 +90,7 @@
     
 
 function onScanSuccess(decodedText) {
-  if (!running) return;
+  alert("QR detected: " + decodedText);
 
   lastText = decodedText.trim();
   ticket.textContent = lastText;
