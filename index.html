@@ -1,0 +1,170 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Grad Ball QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 24px 16px;
+      background: #f5f6f8;
+      color: #202124;
+    }
+    h1 { font-size: 25px; }
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 20px;
+      margin-top: 18px;
+      box-shadow: 0 2px 8px #00000010;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border: 0;
+      border-radius: 9px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #17365d;
+      color: white;
+    }
+    button.secondary { background: #5d6673; }
+    #reader { width: 100%; margin-top: 14px; }
+    #ticket {
+      font-size: 25px;
+      font-weight: bold;
+      overflow-wrap: anywhere;
+      padding: 12px;
+      background: #eef2f7;
+      border-radius: 8px;
+    }
+    #status { line-height: 1.5; }
+    .hint { color: #5f6368; font-size: 14px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>Wits Grad Ball</h1>
+  <p>QR ticket scanner — TEST ONLY</p>
+
+  <div class="card">
+    <p class="hint">
+      Scan a test ticket QR code. This page only reads the QR content;
+      it does not approve entry or check whether a ticket has already
+      been used.
+    </p>
+
+    <button id="start">Start camera scanner</button>
+    <button id="stop" class="secondary" disabled>Stop scanner</button>
+
+    <div id="reader"></div>
+    <p id="status" role="status">Scanner not started.</p>
+  </div>
+
+  <div class="card">
+    <h2>Scanned ticket ID</h2>
+    <div id="ticket">Nothing scanned yet</div>
+    <button id="copy" class="secondary" disabled>Copy ticket ID</button>
+    <p class="hint">
+      After scanning, open your existing Grad Ball test app and enter
+      the copied ID under Manual ticket check.
+    </p>
+  </div>
+
+  <script>
+    let scanner = null;
+    let running = false;
+    let lastText = "";
+
+    const status = document.getElementById("status");
+    const ticket = document.getElementById("ticket");
+    const startButton = document.getElementById("start");
+    const stopButton = document.getElementById("stop");
+    const copyButton = document.getElementById("copy");
+
+    function onScanSuccess(decodedText) {
+      if (!running) return;
+
+      lastText = decodedText.trim();
+      ticket.textContent = lastText;
+      copyButton.disabled = !lastText;
+      status.textContent =
+        "QR code read successfully. Check the ID, then copy it.";
+      stopScanner();
+    }
+
+    async function startScanner() {
+      startButton.disabled = true;
+      status.textContent = "Requesting camera access…";
+
+      try {
+        if (!window.isSecureContext) {
+          throw new Error("Open this page using its HTTPS GitHub Pages address.");
+        }
+
+        if (!navigator.mediaDevices ||
+            !navigator.mediaDevices.getUserMedia) {
+          throw new Error("Camera access is unavailable in this browser context.");
+        }
+
+        scanner = new Html5Qrcode("reader");
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          onScanSuccess,
+          function () {}
+        );
+
+        running = true;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        status.textContent = "Camera active. Point it at a QR code.";
+      } catch (error) {
+        running = false;
+        startButton.disabled = false;
+        stopButton.disabled = true;
+        status.textContent =
+          "Could not start camera: " + (error.message || String(error));
+      }
+    }
+
+    async function stopScanner() {
+      running = false;
+      stopButton.disabled = true;
+
+      if (scanner) {
+        try {
+          if (scanner.isScanning) {
+            await scanner.stop();
+          }
+          scanner.clear();
+        } catch (error) {
+          console.log("Scanner stopped or already inactive.");
+        }
+        scanner = null;
+      }
+
+      startButton.disabled = false;
+    }
+
+    startButton.addEventListener("click", startScanner);
+    stopButton.addEventListener("click", stopScanner);
+
+    copyButton.addEventListener("click", async function () {
+      if (!lastText) return;
+
+      try {
+        await navigator.clipboard.writeText(lastText);
+        status.textContent = "Ticket ID copied. You can paste it into Manual ticket check.";
+      } catch (error) {
+        status.textContent = "Copy was blocked. Select the ticket ID and copy it manually.";
+      }
+    });
+  </script>
+</body>
+</html>
