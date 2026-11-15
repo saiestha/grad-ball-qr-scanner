@@ -221,6 +221,10 @@ async function onScanSuccess(decodedText) {
 }
 
 if (String(before.checkedIn).trim().toLowerCase() === "yes") {
+  if (String(before.snackCollected).trim().toLowerCase() !== "yes") {
+    snackButton.disabled = false;
+  }
+
   showResult("rejected", "⛔ ALREADY CHECKED IN",
     "This ticket has already been used");
   return;
