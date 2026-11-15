@@ -232,21 +232,38 @@ async function onScanSuccess(decodedText) {
       })
     });
 
+       await new Promise(resolve => setTimeout(resolve, 1000));
+
     const after = await lookupTicket(lastText);
 
     if (
+      after.ok &&
+      String(after.checkedIn).trim().toLowerCase() === "yes"
+    ) {
+      showResult(
+        "approved",
+        "✅ ENTRY APPROVED",
+        "Check-in recorded successfully"
+      );
+    } else if (
       !after.ok &&
       after.message === "ALREADY CHECKED IN"
     ) {
-      showResult("approved", "✅ ENTRY APPROVED", "Check-in recorded successfully");
+      showResult(
+        "rejected",
+        "⛔ ALREADY CHECKED IN",
+        "This ticket has already been used"
+      );
     } else {
       status.textContent =
         "CHECK-IN NOT CONFIRMED — PLEASE CHECK THE SHEET";
     }
+
   } catch (error) {
     status.textContent =
       "CONNECTION ERROR — PLEASE CHECK THE SHEET";
   }
+}
 }
 
 
