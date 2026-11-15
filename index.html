@@ -4,388 +4,475 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Grad Ball QR Scanner</title>
+  <title>Wits Grad Ball Scanner</title>
+
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
   <style>
-    
-/* Large, easy-to-read ticket result */
-.status {
-  padding: 22px 16px;
-  margin: 18px 0;
-  border-radius: 18px;
-  border: 2px solid transparent;
-  text-align: center;
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.4;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-}
-
-.status-approved {
-  color: #14532d;
-  background: #dcfce7;
-  border-color: #22c55e;
-}
-
-.status-rejected {
-  color: #991b1b;
-  background: #fee2e2;
-  border-color: #ef4444;
-}
-
-.status-checking {
-  color: #854d0e;
-  background: #fef3c7;
-  border-color: #f59e0b;
-}
-
-.status-connection {
-  color: #78350f;
-  background: #ffedd5;
-  border-color: #f97316;
-}
-
-.status-details {
-  display: block;
-  margin-top: 10px;
-  font-size: 15px;
-  font-weight: 500;
-}
-
     body {
       font-family: Arial, sans-serif;
       max-width: 520px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 20px 16px;
       background: #f5f6f8;
       color: #202124;
     }
-    h1 { font-size: 25px; }
+
     .card {
       background: white;
       border-radius: 14px;
-      padding: 20px;
-      margin-top: 18px;
+      padding: 18px;
+      margin-top: 16px;
       box-shadow: 0 2px 8px #00000010;
     }
+
     button {
       width: 100%;
-      padding: 14px;
+      padding: 15px;
       margin-top: 10px;
       border: 0;
       border-radius: 9px;
       font-size: 16px;
-      cursor: pointer;
+      font-weight: bold;
       background: #17365d;
       color: white;
     }
-    button.secondary { background: #5d6673; }
-    #reader { width: 100%; margin-top: 14px; }
+
+    button.secondary {
+      background: #5d6673;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+    }
+
+    #reader {
+      width: 100%;
+      margin-top: 14px;
+    }
+
+    #status {
+      padding: 18px 12px;
+      border-radius: 12px;
+      margin-top: 16px;
+      text-align: center;
+      font-size: 19px;
+      font-weight: bold;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .approved {
+      background: #dcfce7;
+      color: #14532d;
+      border: 2px solid #22c55e;
+    }
+
+    .rejected {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 2px solid #ef4444;
+    }
+
+    .checking {
+      background: #fef3c7;
+      color: #854d0e;
+      border: 2px solid #f59e0b;
+    }
+
+    .connection {
+      background: #ffedd5;
+      color: #78350f;
+      border: 2px solid #f97316;
+    }
+
+    .details {
+      display: block;
+      font-size: 15px;
+      font-weight: normal;
+      margin-top: 10px;
+      text-align: left;
+    }
+
     #ticket {
-      font-size: 25px;
+      font-size: 23px;
       font-weight: bold;
       overflow-wrap: anywhere;
       padding: 12px;
       background: #eef2f7;
       border-radius: 8px;
     }
-    #status { line-height: 1.5; }
-    .hint { color: #5f6368; font-size: 14px; line-height: 1.5; }
   </style>
 </head>
+
 <body>
+
   <h1>Wits Grad Ball</h1>
-  <p>QR ticket scanner — TEST ONLY</p>
+  <p>QR Ticket Scanner — TEST ONLY</p>
 
   <div class="card">
-    <p class="hint">
-      Scan a test ticket QR code. This page only reads the QR content;
-      it does not approve entry or check whether a ticket has already
-      been used.
-    </p>
 
-    <button id="start">Start camera scanner</button>
-    <button id="stop" class="secondary" disabled>Stop scanner</button>
+    <button id="start">Start Camera Scanner</button>
+    <button id="stop" class="secondary" disabled>Stop Scanner</button>
     <button id="snack" disabled>Collect Snack</button>
 
     <div id="reader"></div>
-    <p id="status" role="status">Scanner not started.</p>
+
+    <div id="status" class="checking">
+      Scanner not started.
+    </div>
+
   </div>
 
   <div class="card">
-    <h2>Scanned ticket ID</h2>
+    <h2>Scanned Ticket</h2>
     <div id="ticket">Nothing scanned yet</div>
-    <button id="copy" class="secondary" disabled>Copy ticket ID</button>
-    <p class="hint">
-      After scanning, open your existing Grad Ball test app and enter
-      the copied ID under Manual ticket check.
-    </p>
+    <button id="copy" class="secondary" disabled>Copy Ticket ID</button>
   </div>
 
   <script>
-    let scanner = null;
-    let running = false;
-    let lastText = "";
 
+    // YOUR GOOGLE APPS SCRIPT WEB APP ADDRESS
     const liveAppUrl = "https://script.google.com/macros/s/AKfycby40F25lYenMceuSmPhqMVaCioOEkCCg7ru__Az1hiXvb4WmyJLT01H_GyBTNNbrntmsA/exec";
-    
-function lookupTicket(ticketId, action = "") {
-  return new Promise((resolve, reject) => {
-    const callbackName = "gradBallLookup";
-    const script = document.createElement("script");
-    let finished = false;
 
-    function cleanup() {
-      clearTimeout(timeout);
-      script.remove();
-      delete window[callbackName];
-    }
-
-    const timeout = setTimeout(() => {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      reject(new Error("Ticket lookup timed out."));
-    }, 10000);
-
-    window[callbackName] = (result) => {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      resolve(result);
-    };
-
-    script.onerror = () => {
-      if (finished) return;
-      finished = true;
-      cleanup();
-      reject(new Error("Could not contact the ticket system."));
-    };
-
-   const url = liveAppUrl +
-  "?callback=gradBallLookup&ticketId=" +
-  encodeURIComponent(ticketId) +
-  (action ? "&action=" + encodeURIComponent(action) : "");
-
-    document.head.appendChild(script);
-  });
-}
+    let scanner = null;
+    let lastText = "";
+    let processing = false;
 
     const status = document.getElementById("status");
     const ticket = document.getElementById("ticket");
     const startButton = document.getElementById("start");
     const stopButton = document.getElementById("stop");
+    const snackButton = document.getElementById("snack");
     const copyButton = document.getElementById("copy");
-const snackButton = document.getElementById("snack");
-    
 
 
-function showResult(type, heading, details = "") {
-  status.className = "status status-" + type;
-  status.replaceChildren();
+    // DISPLAY RESULTS
 
-  const title = document.createElement("div");
-  title.textContent = heading;
-  status.appendChild(title);
+    function showResult(type, heading, details = "") {
+      status.className = type;
+      status.replaceChildren();
 
-  if (details) {
-    const extra = document.createElement("span");
-    extra.className = "status-details";
-    extra.textContent = details;
-    status.appendChild(extra);
-  }
-}
+      const title = document.createElement("div");
+      title.textContent = heading;
+      status.appendChild(title);
 
-function showGuestStatuses(guest) {
-  status.className = "status status-rejected";
-  status.replaceChildren();
-
-  const title = document.createElement("div");
-  title.textContent = "TICKET STATUS";
-  status.appendChild(title);
-
-  const entry = document.createElement("div");
-  entry.textContent =
-    "Entry: " +
-    (String(guest.checkedIn).trim().toLowerCase() === "yes"
-      ? "✅ CHECKED IN"
-      : "NOT CHECKED IN");
-  status.appendChild(entry);
-
-  const snack = document.createElement("div");
-  snack.textContent =
-    "Snack: " +
-    (String(guest.snackCollected).trim().toLowerCase() === "yes"
-      ? "⛔ ALREADY COLLECTED"
-      : "NOT YET COLLECTED");
-  status.appendChild(snack);
-}
+      if (details) {
+        const extra = document.createElement("span");
+        extra.className = "details";
+        extra.textContent = details;
+        status.appendChild(extra);
+      }
+    }
 
 
-
-async function onScanSuccess(decodedText) {
-  lastText = decodedText.trim();
-
-  ticket.textContent = lastText;
-  copyButton.disabled = !lastText;
-  showResult("checking", "⏳ CHECKING TICKET", "Please wait…");
-
-  await stopScanner();
-
-  try {
-    const result = await lookupTicket(lastText, "checkIn");
-
-    if (result.ok) {
-      showResult(
-        "approved",
-        "✅ ENTRY APPROVED",
-        "Check-in recorded successfully"
-      );
-      snackButton.disabled = false;
-
-    } else if (result.message === "ALREADY CHECKED IN") {
-      snackButton.disabled =
-        String(result.snackCollected).trim().toLowerCase() === "yes";
-
-      showGuestStatuses(result);
-
-    } else {
-      showResult(
-        "rejected",
-        "⛔ " + result.message,
-        "Please check the ticket"
+    function guestDetails(guest) {
+      return (
+        "Name: " + (guest.name || "—") +
+        "\nEmail: " + (guest.email || "—") +
+        "\nMeal: " + (guest.meal || "—") +
+        "\nEntry: " + (guest.checkedIn || "—") +
+        "\nSnack: " + (guest.snackCollected || "—")
       );
     }
 
-  } catch (error) {
-    showResult(
-      "connection",
-      "CONNECTION ERROR",
-      error.message || "Please try again"
-    );
-  }
-}
 
-async function collectSnack() {
-  if (!lastText) return;
+    // JSONP REQUEST TO GOOGLE APPS SCRIPT
 
-  snackButton.disabled = true;
-  showResult("checking", "⏳ RECORDING SNACK", "Please wait…");
+    function lookupTicket(ticketId, action = "") {
+      return new Promise((resolve, reject) => {
 
-  try {
-    await fetch(liveAppUrl, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=UTF-8"
-      },
-      body: JSON.stringify({
-        action: "collectSnack",
-        ticketId: lastText
-      })
-    });
+        const callbackName = "gradBallLookup";
+        const script = document.createElement("script");
+        let finished = false;
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const guest = await lookupTicket(lastText);
-
-    if (
-      guest.ok &&
-      String(guest.snackCollected).trim().toLowerCase() === "yes"
-    ) {
-      showResult(
-        "approved",
-        "✅ SNACK COLLECTED",
-        "Collection recorded successfully"
-      );
-    } else {
-      snackButton.disabled = false;
-      showResult(
-        "rejected",
-        "⛔ COLLECTION NOT CONFIRMED",
-        "Please check the spreadsheet"
-      );
-    }
-  } catch (error) {
-    snackButton.disabled = false;
-    showResult(
-      "error",
-      "CONNECTION ERROR",
-      "Please check the spreadsheet"
-    );
-  }
-}
-    async function startScanner() {
-      startButton.disabled = true;
-      status.textContent = "Requesting camera access…";
-
-      try {
-        if (!window.isSecureContext) {
-          throw new Error("Open this page using its HTTPS GitHub Pages address.");
+        function cleanup() {
+          clearTimeout(timeout);
+          script.remove();
+          delete window[callbackName];
         }
 
-        if (!navigator.mediaDevices ||
-            !navigator.mediaDevices.getUserMedia) {
-          throw new Error("Camera access is unavailable in this browser context.");
+        const timeout = setTimeout(() => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          reject(new Error("Ticket system timed out."));
+        }, 10000);
+
+        window[callbackName] = (result) => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          resolve(result);
+        };
+
+        script.onerror = () => {
+          if (finished) return;
+          finished = true;
+          cleanup();
+          reject(new Error("Could not contact ticket system."));
+        };
+
+        script.src =
+          liveAppUrl +
+          "?callback=" + callbackName +
+          "&ticketId=" + encodeURIComponent(ticketId) +
+          (action ? "&action=" + encodeURIComponent(action) : "") +
+          "&t=" + Date.now();
+
+        document.head.appendChild(script);
+      });
+    }
+
+
+    // STOP CAMERA
+
+    async function stopScanner() {
+      stopButton.disabled = true;
+
+      if (scanner) {
+        try {
+          if (scanner.isScanning) {
+            await scanner.stop();
+          }
+
+          await scanner.clear();
+
+        } catch (error) {
+          console.log("Scanner cleanup:", error);
+        }
+
+        scanner = null;
+      }
+
+      startButton.disabled = false;
+    }
+
+
+    // SCAN AND CHECK IN
+
+    async function onScanSuccess(decodedText) {
+
+      if (processing) return;
+      processing = true;
+
+      lastText = decodedText.trim();
+
+      ticket.textContent = lastText;
+      copyButton.disabled = false;
+      snackButton.disabled = true;
+
+      showResult("checking", "CHECKING TICKET", "Please wait…");
+
+      await stopScanner();
+
+      try {
+
+        // ONE REQUEST: checks and records entry
+        const result = await lookupTicket(lastText, "checkIn");
+
+        if (result.ok) {
+
+          snackButton.disabled = false;
+
+          showResult(
+            "approved",
+            "ENTRY APPROVED",
+            guestDetails({
+              ...result,
+              checkedIn: "Yes"
+            })
+          );
+
+        } else if (result.message === "ALREADY CHECKED IN") {
+
+          snackButton.disabled =
+            String(result.snackCollected).toLowerCase() === "yes";
+
+          showResult(
+            "rejected",
+            "ALREADY CHECKED IN",
+            guestDetails(result)
+          );
+
+        } else {
+
+          showResult(
+            "rejected",
+            result.message || "INVALID TICKET",
+            "Please check the ticket."
+          );
+        }
+
+      } catch (error) {
+
+        showResult(
+          "connection",
+          "CONNECTION ERROR",
+          error.message
+        );
+
+      } finally {
+        processing = false;
+      }
+    }
+
+
+    // COLLECT SNACK
+
+    async function collectSnack() {
+
+      if (!lastText || processing) return;
+
+      processing = true;
+      snackButton.disabled = true;
+
+      showResult("checking", "RECORDING SNACK", "Please wait…");
+
+      try {
+
+        await fetch(liveAppUrl, {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            "Content-Type": "text/plain;charset=UTF-8"
+          },
+          body: JSON.stringify({
+            action: "collectSnack",
+            ticketId: lastText
+          })
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const guest = await lookupTicket(lastText);
+
+        if (
+          guest.ok &&
+          String(guest.snackCollected).trim().toLowerCase() === "yes"
+        ) {
+
+          showResult(
+            "approved",
+            "SNACK COLLECTED",
+            guestDetails(guest)
+          );
+
+        } else {
+
+          snackButton.disabled = false;
+
+          showResult(
+            "rejected",
+            "COLLECTION NOT CONFIRMED",
+            "Please check the spreadsheet."
+          );
+        }
+
+      } catch (error) {
+
+        snackButton.disabled = false;
+
+        showResult(
+          "connection",
+          "CONNECTION ERROR",
+          error.message
+        );
+
+      } finally {
+        processing = false;
+      }
+    }
+
+
+    // START CAMERA
+
+    async function startScanner() {
+
+      if (scanner || processing) return;
+
+      startButton.disabled = true;
+      status.className = "checking";
+      status.textContent = "Opening camera…";
+
+      try {
+
+        if (!window.isSecureContext) {
+          throw new Error("Please use the HTTPS GitHub Pages address.");
+        }
+
+        if (typeof Html5Qrcode === "undefined") {
+          throw new Error("QR scanner library did not load.");
         }
 
         scanner = new Html5Qrcode("reader");
+
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 240, height: 240 } },
+          {
+            fps: 10,
+            qrbox: { width: 240, height: 240 }
+          },
           onScanSuccess,
           function () {}
         );
 
-        running = true;
-        startButton.disabled = true;
         stopButton.disabled = false;
-        status.textContent = "Camera active. Point it at a QR code.";
+
+        showResult(
+          "approved",
+          "CAMERA ACTIVE",
+          "Point the camera at a ticket QR code."
+        );
+
       } catch (error) {
-        running = false;
+
+        if (scanner) {
+          try {
+            await scanner.clear();
+          } catch (cleanupError) {}
+        }
+
+        scanner = null;
         startButton.disabled = false;
         stopButton.disabled = true;
-        status.textContent =
-          "Could not start camera: " + (error.message || String(error));
+
+        showResult(
+          "connection",
+          "CAMERA ERROR",
+          error.message || String(error)
+        );
       }
     }
 
-   async function stopScanner() {
-  stopButton.disabled = true;
 
-  if (scanner) {
-    try {
-      if (scanner.isScanning) {
-        await scanner.stop();
-      }
-      await scanner.clear();
-    } catch (error) {
-      console.log("Scanner cleanup:", error);
-    }
-    scanner = null;
-  }
-
-  running = false;
-  startButton.disabled = false;
-}
+    // BUTTONS
 
     startButton.addEventListener("click", startScanner);
-    snackButton.addEventListener("click", collectSnack);
-    console.log("Start button listener attached");
     stopButton.addEventListener("click", stopScanner);
+    snackButton.addEventListener("click", collectSnack);
 
-    copyButton.addEventListener("click", async function () {
+
+    // COPY TICKET ID
+
+    copyButton.addEventListener("click", async () => {
+
       if (!lastText) return;
 
       try {
         await navigator.clipboard.writeText(lastText);
-        status.textContent = "Ticket ID copied. You can paste it into Manual ticket check.";
+        showResult("approved", "TICKET ID COPIED");
+
       } catch (error) {
-        status.textContent = "Copy was blocked. Select the ticket ID and copy it manually.";
+        showResult(
+          "connection",
+          "COPY UNAVAILABLE",
+          "Please copy the ticket ID manually."
+        );
       }
     });
+
   </script>
+
 </body>
 </html>
