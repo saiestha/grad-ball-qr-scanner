@@ -212,8 +212,9 @@ async function onScanSuccess(decodedText) {
   try {
     // First, check the current ticket status.
     const before = await lookupTicket(lastText);
+     alert(JSON.stringify(before));
     console.log("Ticket lookup:", before);
-    alert(JSON.stringify(before));
+   
 
     if (!before.ok) {
   showResult("rejected", "⛔ INVALID TICKET",
