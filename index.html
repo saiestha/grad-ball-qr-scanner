@@ -273,7 +273,7 @@ async function onScanSuccess(decodedText) {
     async function startScanner() {
       startButton.disabled = true;
       status.textContent = "Requesting camera access…";
-
+alert("START SCANNER FUNCTION REACHED");
       try {
         if (!window.isSecureContext) {
           throw new Error("Open this page using its HTTPS GitHub Pages address.");
@@ -325,6 +325,7 @@ async function onScanSuccess(decodedText) {
     }
 
     startButton.addEventListener("click", startScanner);
+    console.log("Start button listener attached");
     stopButton.addEventListener("click", stopScanner);
 
     copyButton.addEventListener("click", async function () {
