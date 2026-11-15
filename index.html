@@ -253,6 +253,7 @@ if (String(before.checkedIn).trim().toLowerCase() === "yes") {
         "✅ ENTRY APPROVED",
         "Check-in recorded successfully"
       );
+      snackButton.disabled = false;
     } else if (
       !after.ok &&
       after.message === "ALREADY CHECKED IN"
