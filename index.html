@@ -225,6 +225,7 @@ function showGuestStatuses(guest) {
 }
 
 
+
 async function onScanSuccess(decodedText) {
   lastText = decodedText.trim();
 
@@ -232,35 +233,28 @@ async function onScanSuccess(decodedText) {
   copyButton.disabled = !lastText;
   showResult("checking", "⏳ CHECKING TICKET", "Please wait…");
 
-  stopScanner();
+  await stopScanner();
 
   try {
-    // First, check the current ticket status.
     const before = await lookupTicket(lastText);
-     alert(JSON.stringify(before));
-    console.log("Ticket lookup:", before);
-   
 
     if (!before.ok) {
-  showResult("rejected", "⛔ INVALID TICKET",
-    before.message || "Ticket not found");
-  return;
-}
+      showResult(
+        "rejected",
+        "⛔ INVALID TICKET",
+        before.message || "Ticket not found"
+      );
+      return;
+    }
 
-if (String(before.checkedIn).trim().toLowerCase() === "yes") {
+    if (String(before.checkedIn).trim().toLowerCase() === "yes") {
+      snackButton.disabled =
+        String(before.snackCollected).trim().toLowerCase() === "yes";
 
-  if (String(before.snackCollected).trim().toLowerCase() === "yes") {
-    snackButton.disabled = true;
-  } else {
-    snackButton.disabled = false;
-  }
+      showGuestStatuses(before);
+      return;
+    }
 
-  showGuestStatuses(before);
-  return;
-}
-
-    // Request check-in. The POST response itself is unreadable
-    // in no-cors mode, so verify the change with a fresh lookup.
     await fetch(liveAppUrl, {
       method: "POST",
       mode: "no-cors",
@@ -272,21 +266,6 @@ if (String(before.checkedIn).trim().toLowerCase() === "yes") {
         ticketId: lastText
       })
     });
-
-      let after;
-
-for (let attempt = 0; attempt < 5; attempt++) {
-  await new Promise(resolve => setTimeout(resolve, 300));
-
-  after = await lookupTicket(lastText);
-
-  if (
-    after.ok &&
-    String(after.checkedIn).trim().toLowerCase() === "yes"
-  ) {
-    break;
-  }
-}
 
     const after = await lookupTicket(lastText);
 
@@ -300,25 +279,23 @@ for (let attempt = 0; attempt < 5; attempt++) {
         "Check-in recorded successfully"
       );
       snackButton.disabled = false;
-    } else if (
-      !after.ok &&
-      after.message === "ALREADY CHECKED IN"
-    ) {
+    } else {
       showResult(
         "rejected",
-        "⛔ ALREADY CHECKED IN",
-        "This ticket has already been used"
+        "⛔ CHECK-IN NOT CONFIRMED",
+        "Please check the spreadsheet"
       );
-    } else {
-      status.textContent =
-        "CHECK-IN NOT CONFIRMED — PLEASE CHECK THE SHEET";
     }
 
-    } catch (error) {
-    status.textContent =
-      "CONNECTION ERROR — PLEASE CHECK THE SHEET";
+  } catch (error) {
+    showResult(
+      "error",
+      "CONNECTION ERROR",
+      "Please check the spreadsheet"
+    );
   }
 }
+
 async function collectSnack() {
   if (!lastText) return;
 
@@ -371,7 +348,7 @@ async function collectSnack() {
     async function startScanner() {
       startButton.disabled = true;
       status.textContent = "Requesting camera access…";
-alert("START SCANNER FUNCTION REACHED");
+
       try {
         if (!window.isSecureContext) {
           throw new Error("Open this page using its HTTPS GitHub Pages address.");
