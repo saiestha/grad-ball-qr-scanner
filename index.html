@@ -235,20 +235,37 @@ async function onScanSuccess(decodedText) {
   await stopScanner();
 
   try {
-   const result = await lookupTicket(lastText, "checkIn");
+    const result = await lookupTicket(lastText, "checkIn");
 
-if (result.ok) {
-  showResult("approved", "✅ ENTRY APPROVED",
-    "Check-in recorded successfully");
-  snackButton.disabled = false;
-} else if (result.message === "ALREADY CHECKED IN") {
-  snackButton.disabled =
-    String(result.snackCollected).trim().toLowerCase() === "yes";
-  showGuestStatuses(result);
-} else {
-  showResult("rejected", "⛔ " + result.message,
-    "Please check the ticket");
-}
+    if (result.ok) {
+      showResult(
+        "approved",
+        "✅ ENTRY APPROVED",
+        "Check-in recorded successfully"
+      );
+      snackButton.disabled = false;
+
+    } else if (result.message === "ALREADY CHECKED IN") {
+      snackButton.disabled =
+        String(result.snackCollected).trim().toLowerCase() === "yes";
+
+      showGuestStatuses(result);
+
+    } else {
+      showResult(
+        "rejected",
+        "⛔ " + result.message,
+        "Please check the ticket"
+      );
+    }
+
+  } catch (error) {
+    showResult(
+      "connection",
+      "CONNECTION ERROR",
+      error.message || "Please try again"
+    );
+  }
 }
 
 async function collectSnack() {
