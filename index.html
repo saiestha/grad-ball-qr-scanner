@@ -273,7 +273,20 @@ if (String(before.checkedIn).trim().toLowerCase() === "yes") {
       })
     });
 
-       await new Promise(resolve => setTimeout(resolve, 1000));
+      let after;
+
+for (let attempt = 0; attempt < 5; attempt++) {
+  await new Promise(resolve => setTimeout(resolve, 300));
+
+  after = await lookupTicket(lastText);
+
+  if (
+    after.ok &&
+    String(after.checkedIn).trim().toLowerCase() === "yes"
+  ) {
+    break;
+  }
+}
 
     const after = await lookupTicket(lastText);
 
