@@ -131,7 +131,7 @@
 
     const liveAppUrl = "https://script.google.com/macros/s/AKfycby40F25lYenMceuSmPhqMVaCioOEkCCg7ru__Az1hiXvb4WmyJLT01H_GyBTNNbrntmsA/exec";
     
-function lookupTicket(ticketId) {
+function lookupTicket(ticketId, action = "") {
   return new Promise((resolve, reject) => {
     const callbackName = "gradBallLookup";
     const script = document.createElement("script");
@@ -164,11 +164,10 @@ function lookupTicket(ticketId) {
       reject(new Error("Could not contact the ticket system."));
     };
 
-    script.src =
-      liveAppUrl +
-      "?callback=" + callbackName +
-      "&ticketId=" + encodeURIComponent(ticketId) +
-      "&t=" + Date.now();
+   const url = liveAppUrl +
+  "?callback=gradBallLookup&ticketId=" +
+  encodeURIComponent(ticketId) +
+  (action ? "&action=" + encodeURIComponent(action) : "");
 
     document.head.appendChild(script);
   });
