@@ -199,6 +199,31 @@ function showResult(type, heading, details = "") {
   }
 }
 
+function showGuestStatuses(guest) {
+  status.className = "status status-rejected";
+  status.replaceChildren();
+
+  const title = document.createElement("div");
+  title.textContent = "TICKET STATUS";
+  status.appendChild(title);
+
+  const entry = document.createElement("div");
+  entry.textContent =
+    "Entry: " +
+    (String(guest.checkedIn).trim().toLowerCase() === "yes"
+      ? "✅ CHECKED IN"
+      : "NOT CHECKED IN");
+  status.appendChild(entry);
+
+  const snack = document.createElement("div");
+  snack.textContent =
+    "Snack: " +
+    (String(guest.snackCollected).trim().toLowerCase() === "yes"
+      ? "⛔ ALREADY COLLECTED"
+      : "NOT YET COLLECTED");
+  status.appendChild(snack);
+}
+
 
 async function onScanSuccess(decodedText) {
   lastText = decodedText.trim();
@@ -223,24 +248,14 @@ async function onScanSuccess(decodedText) {
 }
 
 if (String(before.checkedIn).trim().toLowerCase() === "yes") {
+
   if (String(before.snackCollected).trim().toLowerCase() === "yes") {
     snackButton.disabled = true;
-
-    showResult(
-  "rejected",
-  "⛔ ALREADY CHECKED IN",
-  "Entry recorded successfully. SNACK ALREADY COLLECTED."
-);
   } else {
     snackButton.disabled = false;
-
-    showResult(
-      "rejected",
-      "⛔ ALREADY CHECKED IN",
-      "Entry recorded. Guest may still collect their snack."
-    );
   }
 
+  showGuestStatuses(before);
   return;
 }
 
