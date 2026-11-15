@@ -259,16 +259,11 @@ async function onScanSuccess(decodedText) {
         "CHECK-IN NOT CONFIRMED — PLEASE CHECK THE SHEET";
     }
 
-  } catch (error) {
+    } catch (error) {
     status.textContent =
       "CONNECTION ERROR — PLEASE CHECK THE SHEET";
   }
 }
-}
-
-
-
-
 
     async function startScanner() {
       startButton.disabled = true;
