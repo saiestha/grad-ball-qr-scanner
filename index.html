@@ -380,24 +380,24 @@ async function collectSnack() {
       }
     }
 
-    async function stopScanner() {
-      running = false;
-      stopButton.disabled = true;
+   async function stopScanner() {
+  stopButton.disabled = true;
 
-      if (scanner) {
-        try {
-          if (scanner.isScanning) {
-            await scanner.stop();
-          }
-          scanner.clear();
-        } catch (error) {
-          console.log("Scanner stopped or already inactive.");
-        }
-        scanner = null;
+  if (scanner) {
+    try {
+      if (scanner.isScanning) {
+        await scanner.stop();
       }
-
-      startButton.disabled = false;
+      await scanner.clear();
+    } catch (error) {
+      console.log("Scanner cleanup:", error);
     }
+    scanner = null;
+  }
+
+  running = false;
+  startButton.disabled = false;
+}
 
     startButton.addEventListener("click", startScanner);
     snackButton.addEventListener("click", collectSnack);
