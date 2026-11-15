@@ -213,10 +213,16 @@ async function onScanSuccess(decodedText) {
     const before = await lookupTicket(lastText);
 
     if (!before.ok) {
-      showResult("rejected", "⛔ ALREADY CHECKED IN",
-  before.message || "This ticket has already been used");
-      return;
-    }
+  showResult("rejected", "⛔ INVALID TICKET",
+    before.message || "Ticket not found");
+  return;
+}
+
+if (String(before.checkedIn).trim().toLowerCase() === "yes") {
+  showResult("rejected", "⛔ ALREADY CHECKED IN",
+    "This ticket has already been used");
+  return;
+}
 
     // Request check-in. The POST response itself is unreadable
     // in no-cors mode, so verify the change with a fresh lookup.
