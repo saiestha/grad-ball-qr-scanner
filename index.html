@@ -236,64 +236,20 @@ async function onScanSuccess(decodedText) {
   await stopScanner();
 
   try {
-    const before = await lookupTicket(lastText);
+   const result = await lookupTicket(lastText, "checkIn");
 
-    if (!before.ok) {
-      showResult(
-        "rejected",
-        "⛔ INVALID TICKET",
-        before.message || "Ticket not found"
-      );
-      return;
-    }
-
-    if (String(before.checkedIn).trim().toLowerCase() === "yes") {
-      snackButton.disabled =
-        String(before.snackCollected).trim().toLowerCase() === "yes";
-
-      showGuestStatuses(before);
-      return;
-    }
-
-    await fetch(liveAppUrl, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=UTF-8"
-      },
-      body: JSON.stringify({
-        action: "checkIn",
-        ticketId: lastText
-      })
-    });
-
-    const after = await lookupTicket(lastText);
-
-    if (
-      after.ok &&
-      String(after.checkedIn).trim().toLowerCase() === "yes"
-    ) {
-      showResult(
-        "approved",
-        "✅ ENTRY APPROVED",
-        "Check-in recorded successfully"
-      );
-      snackButton.disabled = false;
-    } else {
-      showResult(
-        "rejected",
-        "⛔ CHECK-IN NOT CONFIRMED",
-        "Please check the spreadsheet"
-      );
-    }
-
-  } catch (error) {
-    showResult(
-      "error",
-      "CONNECTION ERROR",
-      "Please check the spreadsheet"
-    );
-  }
+if (result.ok) {
+  showResult("approved", "✅ ENTRY APPROVED",
+    "Check-in recorded successfully");
+  snackButton.disabled = false;
+} else if (result.message === "ALREADY CHECKED IN") {
+  snackButton.disabled =
+    String(result.snackCollected).trim().toLowerCase() === "yes";
+  showGuestStatuses(result);
+} else {
+  showResult("rejected", "⛔ " + result.message,
+    "Please check the ticket");
+}
 }
 
 async function collectSnack() {
