@@ -167,14 +167,13 @@
 
 
     function guestDetails(guest) {
-      return (
-        "Name: " + (guest.name || "—") +
-        "\nEmail: " + (guest.email || "—") +
-        "\nMeal: " + (guest.meal || "—") +
-        "\nEntry: " + (guest.checkedIn || "—") +
-        "\nSnack: " + (guest.snackCollected || "—")
-      );
-    }
+  return (
+    "Name: " + (guest.name || "—") +
+    "\nMeal: " + (guest.meal || "—") +
+    "\nEntry: " + (guest.checkedIn || "—") +
+    "\nSnack: " + (guest.snackCollected || "—")
+  );
+}
 
 
     // JSONP REQUEST TO GOOGLE APPS SCRIPT
@@ -410,8 +409,8 @@
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 10,
-            qrbox: { width: 240, height: 240 }
+            fps: 15,
+            qrbox: { width: 250, height: 250 }
           },
           onScanSuccess,
           function () {}
