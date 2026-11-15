@@ -273,7 +273,55 @@ if (String(before.checkedIn).trim().toLowerCase() === "yes") {
       "CONNECTION ERROR — PLEASE CHECK THE SHEET";
   }
 }
+async function collectSnack() {
+  if (!lastText) return;
 
+  snackButton.disabled = true;
+  showResult("checking", "⏳ RECORDING SNACK", "Please wait…");
+
+  try {
+    await fetch(liveAppUrl, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=UTF-8"
+      },
+      body: JSON.stringify({
+        action: "collectSnack",
+        ticketId: lastText
+      })
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const guest = await lookupTicket(lastText);
+
+    if (
+      guest.ok &&
+      String(guest.snackCollected).trim().toLowerCase() === "yes"
+    ) {
+      showResult(
+        "approved",
+        "✅ SNACK COLLECTED",
+        "Collection recorded successfully"
+      );
+    } else {
+      snackButton.disabled = false;
+      showResult(
+        "rejected",
+        "⛔ COLLECTION NOT CONFIRMED",
+        "Please check the spreadsheet"
+      );
+    }
+  } catch (error) {
+    snackButton.disabled = false;
+    showResult(
+      "error",
+      "CONNECTION ERROR",
+      "Please check the spreadsheet"
+    );
+  }
+}
     async function startScanner() {
       startButton.disabled = true;
       status.textContent = "Requesting camera access…";
@@ -329,6 +377,7 @@ alert("START SCANNER FUNCTION REACHED");
     }
 
     startButton.addEventListener("click", startScanner);
+    snackButton.addEventListener("click", collectSnack);
     console.log("Start button listener attached");
     stopButton.addEventListener("click", stopScanner);
 
