@@ -222,12 +222,24 @@ async function onScanSuccess(decodedText) {
 }
 
 if (String(before.checkedIn).trim().toLowerCase() === "yes") {
-  if (String(before.snackCollected).trim().toLowerCase() !== "yes") {
+  if (String(before.snackCollected).trim().toLowerCase() === "yes") {
+    snackButton.disabled = true;
+
+    showResult(
+      "rejected",
+      "⛔ SNACK ALREADY COLLECTED",
+      "This guest has already received their snack"
+    );
+  } else {
     snackButton.disabled = false;
+
+    showResult(
+      "rejected",
+      "⛔ ALREADY CHECKED IN",
+      "Entry recorded. Guest may still collect their snack."
+    );
   }
 
-  showResult("rejected", "⛔ ALREADY CHECKED IN",
-    "This ticket has already been used");
   return;
 }
 
